@@ -103,46 +103,16 @@ public with sharing class LeadTriggerHandler {
 	//public static Boolean isFirstTime = true;
 	//https://www.sfdcpoint.com/salesforce/avoid-recursive-trigger-salesforce/
 
-
-
-	// // private List <Opportunity> newOpportunities;
-    // // private Map <Id, Opportunity> newOpportunityMap;
-    // List <Lead> oldLeads;
-    // Map <Id, Lead> oldLeadsMap;
-
-    // public LeadTriggerHandler() {
-    // //     this.newOpportunities = (List<Opportunity>) Trigger.new;
-    // //     this.newOpportunityMap = (Map<Id, Opportunity>) Trigger.newMap;
-    //      this.oldLeads = (List<Lead>) Trigger.old;
-    //      this.oldLeadsMap = (Map<Id, Lead>) Trigger.oldMap;
-    //  }
-
 	public static void handleLeadAutoConvert(List<Lead> leads) {
-		// // Step 1: Gather all lead emails
-        // Map<Id,String> leadToEmailMap = new Map<Id,String>();
-		// Map <Id, Lead> oldLeadMap = (Map<Id, Lead>) Trigger.oldMap;
-		// for (Lead lead : leads) {
-		// 	Lead oldLead = oldLeadMap.get(lead.Id);
-		// 	if(lead.Email != oldLead.Email && Trigger.isUpdate){   //or check if 
-		// 		leadToEmailMap.put(lead.Id, lead.Email);
-		// 	}
-		// }
 
-		List<Lead> oldLeads = (List<Lead>) Trigger.old;
-		Map<Id, Lead> oldLeadsMap = (Map<Id, Lead>) Trigger.oldMap;
-
-		//Step1 Gather all lead emails
-
-		Map<Id, String> leadToEmailMap = new Map<Id, String>();
-		for(Lead lead : leads){
-		if(lead.Email != null && !lead.IsConverted && oldLeadsMap.containsKey(lead.Id) && oldLeadsMap.get(lead.Id) != null){
-		leadToEmailMap.put(lead.Id, lead.Email);
+	// Step 1: Gather all lead emails
+		Map<Id,String> leadToEmailMap = new Map<Id,String>();
+		for (Lead lead : leads) {
+			leadToEmailMap.put(lead.Id, lead.Email);
 		}
-		}
-
+	
 		// Step 2: Find matching contacts based on email
 		Map<String, Contact> emailToContactMap = new Map<String, Contact>();
-		//if(!leadToEmailMap.isEmpty());
 		for (Contact c : [SELECT Id, Email, AccountId FROM Contact WHERE Email IN :leadToEmailMap.values()]) {
 			if (!emailToContactMap.containsKey(c.Email)) {
 				emailToContactMap.put(c.Email, c);
@@ -152,12 +122,12 @@ public with sharing class LeadTriggerHandler {
 				emailToContactMap.remove(c.Email);
 			}
 		}
-
+	
 		// Step 3: Auto-convert leads
 		List<Database.LeadConvert> leadConverts = new List<Database.LeadConvert>();
 		LeadStatus convertStatus = [SELECT Id, MasterLabel FROM LeadStatus WHERE IsConverted = TRUE LIMIT 1];
 		for (Id leadId : leadToEmailMap.keySet()) {
-            String leadEmail = leadToEmailMap.get(leadId);
+			String leadEmail = leadToEmailMap.get(leadId);
 			if (emailToContactMap.containsKey(leadEmail)) {
 				Database.LeadConvert lc = new Database.LeadConvert();
 				lc.setLeadId(leadId);
@@ -165,12 +135,12 @@ public with sharing class LeadTriggerHandler {
 				lc.setAccountId(emailToContactMap.get(leadEmail).AccountId); // Use existing Account Id
 				lc.setDoNotCreateOpportunity(true); // Assuming we don't want to create an opportunity
 				lc.setConvertedStatus(convertStatus.MasterLabel); // Set the converted status
-				leadConverts.add(lc);
+				leadConverts.add(lc);				
 			}
 		}
-
+	
 		if (!leadConverts.isEmpty()) {
 			List<Database.LeadConvertResult> lcrs = Database.convertLead(leadConverts);
+			}
 		}
-	}
 }
