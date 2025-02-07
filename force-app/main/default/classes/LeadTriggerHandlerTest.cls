@@ -1,8 +1,6 @@
 @isTest
 public with sharing class LeadTriggerHandlerTest {
 
-    //try put insert DML operation into a Test.start() Test.stop()  !!!!!!!!!!!!!!!!!!!!
-    //no just do not do DML operation at all !!!! when you wanto test onle a methods not the trigger !!!!!!!!!!!!!!
     @isTest
     private static void handleTitleNormalization_for_vp_VicePresident_expected(){
 
@@ -13,10 +11,30 @@ public with sharing class LeadTriggerHandlerTest {
         Test.startTest();
         LeadTriggerHandler.handleTitleNormalization(listOfLeds);
         Test.stopTest();
+        System.debug('Show me a list ' + listOfLeds);//shows 'Vice President'!
 
         Lead myLead = listOfLeds[0];
         System.Assert.areEqual('Vice President', myLead.Title,'Expected Title is Vice President');
     }
+
+    @isTest
+    private static void trigger_Insert_handleTitleNormalization(){
+
+        List<Lead> listOfLeds = new List<Lead>();
+        Lead lead = new Lead(Title = 'vp', LastName = 'TestLastName', Company = 'TestCompanyName', FirstName = 'FirstNameTest');
+        listOfLeds.add(lead);
+
+        Test.startTest();
+        insert listOfLeds;
+        //LeadTriggerHandler.handleTitleNormalization(listOfLeds);!
+        Test.stopTest();
+
+        Lead leadAfterInsert = [SELECT Id, Title FROM Lead WHERE Id = :lead.Id];
+        System.debug('Show me a list ' + listOfLeds);//shows 'vp'
+        System.Assert.areEqual('Vice President', leadAfterInsert.Title, 'Expected Title is Vice President');
+    }
+
+
 
     private static String strinGenerate(Set<String>setOfString){
         List<String> myList = new List<String>(setOfString);
@@ -184,31 +202,41 @@ public with sharing class LeadTriggerHandlerTest {
     @isTest
     private static void handleLeadAutoConvert_checkLeadIsCreated_ExpectedSucces(){
 
-        Contact testContact = new Contact(LastName = 'testName', Email = 'salesTest@gmail.com'); //AccountId = null)
-        //insert testContact;
-        System.debug('Here is a testContact ::::'+ testContact);
+
+
+        Contact testContact = new Contact(LastName = 'testName', Email = 'rinepem137@shouxs.com'); //AccountId = null)
+        insert testContact;
+        //System.debug('Here is a testContact ::::'+ testContact);
 
         List<Lead> listOfLead = new List<Lead>();
 
-        Lead lead = new Lead(Status = 'Open - Not Contacted', Email = 'salesTest@gmail.com', 
-        LeadSource = 'Other', Title = 'TestTitle', LastName = 'New_Lead_Test', Company = 'TestCompanyName', Industry = 'Technology');
-        System.debug('Here is a Lead ::::'+ lead);
+        // Lead lead = new Lead(Status = 'Open - Not Contacted', Email = 'salesTest@gmail.com', 
+        // LeadSource = 'Other', Title = 'TestTitle', FirstName = 'FirstName_Test',LastName = 'LastName_Test', Company = 'TestCompanyName', Industry = 'Technology');
 
-        // Lead lead1 = new Lead(Status = 'Open - Not Contacted', Email = 'salesTest1@gmail.com', 
-        // LeadSource = 'Other', Title = 'TestTitle1', LastName = 'New_Lead_Test1', Company = 'TestCompanyName1', Industry = 'null');
+        Lead lead = new Lead(FirstName = 'FirstName_Test', LastName = 'LastName_Test', Company = 'TestCompanyName',  Email = 'rinepem137@shouxs.com');
+        System.debug('Here is a Lead ::::'+ lead);
 
         listOfLead.add(lead);
         System.debug('Here is a list of  Leads ::::'+ listOfLead);
+        System.debug('Here is a ID of Leads :::::'+ lead.Id);
+
         //listOfLead.add(lead1);
       
         Test.startTest();
-        LeadTriggerHandler.handleLeadAutoConvert(listOfLead);
+        //LeadTriggerHandler.handleLeadAutoConvert(listOfLead);
+        insert listOfLead;
         Test.stopTest();
+        System.debug('Here is a ID of Leads :::::'+ lead.Id);
+        
+        Lead leadAfterInsert = [SELECT Id, Status, IsConverted FROM Lead WHERE Id = : lead.Id LIMIT 1];
+        System.debug('Lead after insert :::::'+leadAfterInsert);
+        System.assertEquals(true, leadAfterInsert.IsConverted, 'Lead should be converted');
+        
+        
 
-        List <Account> listAccount = new List<Account>();
 
-        listAccount = [SELECT Id, Name FROM Account];
-        System.Assert.areEqual(1, listAccount.size());
+        //listAccount = [SELECT Id, Name FROM Account];
+        //System.Assert.areEqual(1, listAccount.size());
 
 
 

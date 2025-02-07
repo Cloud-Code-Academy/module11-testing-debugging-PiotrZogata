@@ -32,6 +32,13 @@ public with sharing class LeadTriggerHandler {
 	 */
 	public static void handleTitleNormalization(List<Lead> leadsToNormalize) {
 		for (Lead ld : leadsToNormalize) {
+
+			if(ld.title == null){
+				continue;
+			}
+
+			String title = ld.title.toLowerCase();
+
 			if (ld.title == 'vp' || ld.title.contains('v.p.') || ld.title.contains('vice president')) {
 				ld.Title = 'Vice President';
 			} else if (ld.title.contains('mgr') || ld.title.contains('manage') || ld.title.contains('head of department')) {
@@ -108,7 +115,9 @@ public with sharing class LeadTriggerHandler {
 	// Step 1: Gather all lead emails
 		Map<Id,String> leadToEmailMap = new Map<Id,String>();
 		for (Lead lead : leads) {
+			if(Lead.IsConverted == false){
 			leadToEmailMap.put(lead.Id, lead.Email);
+			}
 		}
 	
 		// Step 2: Find matching contacts based on email
@@ -143,4 +152,44 @@ public with sharing class LeadTriggerHandler {
 			List<Database.LeadConvertResult> lcrs = Database.convertLead(leadConverts);
 			}
 		}
+
+
+	// 	public static void handleLeadAutoConvert(List<Lead> newLeads) {
+			
+	// 	Set<String> emailSet = new Set<String>();
+
+    //     for (Lead lead : newLeads) {
+    //         emailSet.add(lead.Email);
+    //     }
+
+    //     Map<String, List<Contact>> contactsByEmail = new Map<String, List<Contact>>();
+    //     for (Contact contact : [SELECT Id, Email FROM Contact WHERE Email IN :emailSet]) {
+    //         if (!contactsByEmail.containsKey(contact.Email)) {
+    //             contactsByEmail.put(contact.Email, new List<Contact>());
+    //         }
+    //         contactsByEmail.get(contact.Email).add(contact);
+    //     }
+
+    //     for (Lead lead : newLeads) {
+    //         if (lead.Email != null && contactsByEmail.containsKey(lead.Email)) {
+    //             List<Contact> matchingContacts = contactsByEmail.get(lead.Email);
+
+    //             if (matchingContacts.size() == 1) {
+    //                 Contact matchingContact = matchingContacts[0];
+    //                 Database.LeadConvert lc = new Database.LeadConvert();
+    //                 lc.setLeadId(lead.Id);
+    //                 lc.setContactId(matchingContact.Id);
+    //                 lc.setDoNotCreateOpportunity(true);
+    //                 Database.convertLead(lc, false);
+
+    //                 // Merge Lead details with the existing Contact
+    //                 Contact updateContact = new Contact(Id = matchingContact.Id);
+    //                 updateContact.FirstName = lead.FirstName;
+    //                 updateContact.LastName = lead.LastName;
+    //                 // Add more fields as necessary
+    //                 update updateContact;
+    //             }
+    //         }
+    //     }
+    // }
 }
