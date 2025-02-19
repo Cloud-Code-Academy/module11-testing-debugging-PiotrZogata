@@ -32,13 +32,16 @@ public with sharing class LeadTriggerHandler {
 	 */
 	public static void handleTitleNormalization(List<Lead> leadsToNormalize) {
 		for (Lead ld : leadsToNormalize) {
+
+			if(ld.title == null){
+				continue;
+			}
+
+			String title = ld.title.toLowerCase();
+
 			if (ld.title == 'vp' || ld.title.contains('v.p.') || ld.title.contains('vice president')) {
 				ld.Title = 'Vice President';
-			} else if (
-				ld.title.contains('mgr') ||
-				ld.title.contains('manage') ||
-				ld.title.contains('head of department')
-			) {
+			} else if (ld.title.contains('mgr') || ld.title.contains('manage') || ld.title.contains('head of department')) {
 				ld.Title = 'Manager';
 			} else if (ld.title.contains('exec') || ld.title == 'chief' || ld.title.contains('head')) {
 				ld.Title = 'Executive';
@@ -61,22 +64,22 @@ public with sharing class LeadTriggerHandler {
 	 */
 	public static void handleAutoLeadScoring(List<Lead> leadsToScore) {
 		for (Lead ld : leadsToScore) {
-			Integer score = 10;
+			Integer score = 0;
 
 			// Check and add points based on the specified conditions
 			if (ld.LeadSource == 'Website' && ld.Email != null) {
-				score = 3;
+				score += 3;
 			}
 
 			if (ld.Phone != null) {
-				score = 5;
+				score += 5;
 			}
 
 			if (ld.Industry == 'Technology') {
-				score = 10;
+				score += 10;
 			}
 
-			ld.Lead_Score__c = score; // Set the computed score back to the lead
+			ld.Lead_Score__c = score;
 		}
 	}
 
@@ -103,13 +106,20 @@ public with sharing class LeadTriggerHandler {
 	 * - One of the errors is recursion related. Check if the lead is already converted or check if the email has changed/is null
 	 * - One of the errors is map related. Make sure you are using the correct contact map key
 	 */
-	public static void handleLeadAutoConvert(List<Lead> leads) {
-		// Step 1: Gather all lead emails
-        Map<Id,String> leadToEmailMap = new Map<Id,String>();
-		for (Lead lead : leads) {
-			leadToEmailMap.put(lead.Id, lead.Email);
-		}
 
+	// public static Boolean isFirstTime = true;
+	// https://www.sfdcpoint.com/salesforce/avoid-recursive-trigger-salesforce/
+
+	public static void handleLeadAutoConvert(List<Lead> leads) {
+
+	// Step 1: Gather all lead emails
+		Map<Id,String> leadToEmailMap = new Map<Id,String>();
+		for (Lead lead : leads) {
+			if(Lead.IsConverted == false){
+			leadToEmailMap.put(lead.Id, lead.Email);
+			}
+		}
+	
 		// Step 2: Find matching contacts based on email
 		Map<String, Contact> emailToContactMap = new Map<String, Contact>();
 		for (Contact c : [SELECT Id, Email, AccountId FROM Contact WHERE Email IN :leadToEmailMap.values()]) {
@@ -121,12 +131,12 @@ public with sharing class LeadTriggerHandler {
 				emailToContactMap.remove(c.Email);
 			}
 		}
-
+	
 		// Step 3: Auto-convert leads
 		List<Database.LeadConvert> leadConverts = new List<Database.LeadConvert>();
 		LeadStatus convertStatus = [SELECT Id, MasterLabel FROM LeadStatus WHERE IsConverted = TRUE LIMIT 1];
 		for (Id leadId : leadToEmailMap.keySet()) {
-            String leadEmail = leadToEmailMap.get(leadId);
+			String leadEmail = leadToEmailMap.get(leadId);
 			if (emailToContactMap.containsKey(leadEmail)) {
 				Database.LeadConvert lc = new Database.LeadConvert();
 				lc.setLeadId(leadId);
@@ -134,10 +144,11 @@ public with sharing class LeadTriggerHandler {
 				lc.setAccountId(emailToContactMap.get(leadEmail).AccountId); // Use existing Account Id
 				lc.setDoNotCreateOpportunity(true); // Assuming we don't want to create an opportunity
 				lc.setConvertedStatus(convertStatus.MasterLabel); // Set the converted status
-				leadConverts.add(lc);
+
+				leadConverts.add(lc);				
 			}
 		}
-
+	
 		if (!leadConverts.isEmpty()) {
 			List<Database.LeadConvertResult> lcrs = Database.convertLead(leadConverts);
 		}
