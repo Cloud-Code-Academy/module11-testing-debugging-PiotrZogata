@@ -79,7 +79,7 @@ public with sharing class LeadTriggerHandler {
 				score += 10;
 			}
 
-			ld.Lead_Score__c = score; // Set the computed score back to the lead
+			ld.Lead_Score__c = score;
 		}
 	}
 
@@ -107,8 +107,8 @@ public with sharing class LeadTriggerHandler {
 	 * - One of the errors is map related. Make sure you are using the correct contact map key
 	 */
 
-	//public static Boolean isFirstTime = true;
-	//https://www.sfdcpoint.com/salesforce/avoid-recursive-trigger-salesforce/
+	// public static Boolean isFirstTime = true;
+	// https://www.sfdcpoint.com/salesforce/avoid-recursive-trigger-salesforce/
 
 	public static void handleLeadAutoConvert(List<Lead> leads) {
 
@@ -144,52 +144,13 @@ public with sharing class LeadTriggerHandler {
 				lc.setAccountId(emailToContactMap.get(leadEmail).AccountId); // Use existing Account Id
 				lc.setDoNotCreateOpportunity(true); // Assuming we don't want to create an opportunity
 				lc.setConvertedStatus(convertStatus.MasterLabel); // Set the converted status
+
 				leadConverts.add(lc);				
 			}
 		}
 	
 		if (!leadConverts.isEmpty()) {
 			List<Database.LeadConvertResult> lcrs = Database.convertLead(leadConverts);
-			}
 		}
-
-
-	// 	public static void handleLeadAutoConvert(List<Lead> newLeads) {
-			
-	// 	Set<String> emailSet = new Set<String>();
-
-    //     for (Lead lead : newLeads) {
-    //         emailSet.add(lead.Email);
-    //     }
-
-    //     Map<String, List<Contact>> contactsByEmail = new Map<String, List<Contact>>();
-    //     for (Contact contact : [SELECT Id, Email FROM Contact WHERE Email IN :emailSet]) {
-    //         if (!contactsByEmail.containsKey(contact.Email)) {
-    //             contactsByEmail.put(contact.Email, new List<Contact>());
-    //         }
-    //         contactsByEmail.get(contact.Email).add(contact);
-    //     }
-
-    //     for (Lead lead : newLeads) {
-    //         if (lead.Email != null && contactsByEmail.containsKey(lead.Email)) {
-    //             List<Contact> matchingContacts = contactsByEmail.get(lead.Email);
-
-    //             if (matchingContacts.size() == 1) {
-    //                 Contact matchingContact = matchingContacts[0];
-    //                 Database.LeadConvert lc = new Database.LeadConvert();
-    //                 lc.setLeadId(lead.Id);
-    //                 lc.setContactId(matchingContact.Id);
-    //                 lc.setDoNotCreateOpportunity(true);
-    //                 Database.convertLead(lc, false);
-
-    //                 // Merge Lead details with the existing Contact
-    //                 Contact updateContact = new Contact(Id = matchingContact.Id);
-    //                 updateContact.FirstName = lead.FirstName;
-    //                 updateContact.LastName = lead.LastName;
-    //                 // Add more fields as necessary
-    //                 update updateContact;
-    //             }
-    //         }
-    //     }
-    // }
+	}
 }

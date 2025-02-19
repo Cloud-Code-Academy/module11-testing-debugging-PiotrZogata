@@ -14,11 +14,11 @@ public with sharing class LeadTriggerHandlerTest {
         System.debug('Show me a list ' + listOfLeds);//shows 'Vice President'!
 
         Lead myLead = listOfLeds[0];
-        System.Assert.areEqual('Vice President', myLead.Title,'Expected Title is Vice President');
+        Assert.areEqual('Vice President', myLead.Title,'Expected Title is Vice President');
     }
 
     @isTest
-    private static void trigger_Insert_handleTitleNormalization(){
+    private static void leadtrigger_Insert_handleTitleNormalization(){
 
         List<Lead> listOfLeds = new List<Lead>();
         Lead lead = new Lead(Title = 'vp', LastName = 'TestLastName', Company = 'TestCompanyName', FirstName = 'FirstNameTest');
@@ -26,14 +26,36 @@ public with sharing class LeadTriggerHandlerTest {
 
         Test.startTest();
         insert listOfLeds;
-        //LeadTriggerHandler.handleTitleNormalization(listOfLeds);!
         Test.stopTest();
 
         Lead leadAfterInsert = [SELECT Id, Title FROM Lead WHERE Id = :lead.Id];
         System.debug('Show me a list ' + listOfLeds);//shows 'vp'
-        System.Assert.areEqual('Vice President', leadAfterInsert.Title, 'Expected Title is Vice President');
+        Assert.areEqual('Vice President', leadAfterInsert.Title, 'Expected Title is Vice President');
     }
 
+    @isTest
+    private static void handleTitleNormalization_for_vp_mgr_exec_assist(){
+
+        List<Lead> listOfLeds = new List<Lead>();
+        listOfLeds.add(new Lead(Title = 'vp', LastName = 'TestLastName', Company = 'TestCompanyName'));
+        listOfLeds.add(new Lead(Title = 'mgr', LastName = 'TestLastName', Company = 'TestCompanyName'));
+        listOfLeds.add(new Lead(Title = 'exec', LastName = 'TestLastName', Company = 'TestCompanyName'));
+        listOfLeds.add(new Lead(Title = 'assist', LastName = 'TestLastName', Company = 'TestCompanyName'));
+        
+        Test.startTest();
+        LeadTriggerHandler.handleTitleNormalization(listOfLeds);
+        Test.stopTest();
+        System.debug('Show me a list ' + listOfLeds);//shows 'Vice President'!
+
+        Lead myLead = listOfLeds[0];
+        Assert.areEqual('Vice President', myLead.Title,'Expected Title is Vice President');
+        Lead mayLead1 = listOfLeds[1];
+        Assert.areEqual('Manager', mayLead1.Title,'Expected Title is Manager');
+        Lead mayLead2 = listOfLeds[2];
+        Assert.areEqual('Executive', mayLead2.Title,'Expected Title is Executive');
+        Lead myLead3 = listOfLeds[3];
+        Assert.areEqual('Assistant', myLead3.Title,'Expected Title is Assistant');
+    }
 
 
     private static String strinGenerate(Set<String>setOfString){
@@ -133,7 +155,6 @@ public with sharing class LeadTriggerHandlerTest {
         for(Integer i = 0; i < 100; i++){
             listOfLeads.add(new Lead(Title = 'TestTitle'+ i, LastName = 'TestLastName' + i, Company = 'TestCompanyName' + i));
         }
-        //insert listOfLeads;
 
         Test.startTest();
         LeadTriggerHandler.handleAutoLeadScoring(listOfLeads);
@@ -197,65 +218,5 @@ public with sharing class LeadTriggerHandlerTest {
         for(Lead l : listOfLeadsAfterUpdate){
             System.Assert.areEqual(10, l.Lead_Score__c);
         }
-    }
-
-    @isTest
-    private static void handleLeadAutoConvert_checkLeadIsCreated_ExpectedSucces(){
-
-
-
-        Contact testContact = new Contact(LastName = 'testName', Email = 'rinepem137@shouxs.com'); //AccountId = null)
-        insert testContact;
-        //System.debug('Here is a testContact ::::'+ testContact);
-
-        List<Lead> listOfLead = new List<Lead>();
-
-        // Lead lead = new Lead(Status = 'Open - Not Contacted', Email = 'salesTest@gmail.com', 
-        // LeadSource = 'Other', Title = 'TestTitle', FirstName = 'FirstName_Test',LastName = 'LastName_Test', Company = 'TestCompanyName', Industry = 'Technology');
-
-        Lead lead = new Lead(FirstName = 'FirstName_Test', LastName = 'LastName_Test', Company = 'TestCompanyName',  Email = 'rinepem137@shouxs.com');
-        System.debug('Here is a Lead ::::'+ lead);
-
-        listOfLead.add(lead);
-        System.debug('Here is a list of  Leads ::::'+ listOfLead);
-        System.debug('Here is a ID of Leads :::::'+ lead.Id);
-
-        //listOfLead.add(lead1);
-      
-        Test.startTest();
-        //LeadTriggerHandler.handleLeadAutoConvert(listOfLead);
-        insert listOfLead;
-        Test.stopTest();
-        System.debug('Here is a ID of Leads :::::'+ lead.Id);
-        
-        Lead leadAfterInsert = [SELECT Id, Status, IsConverted FROM Lead WHERE Id = : lead.Id LIMIT 1];
-        System.debug('Lead after insert :::::'+leadAfterInsert);
-        System.assertEquals(true, leadAfterInsert.IsConverted, 'Lead should be converted');
-        
-        
-
-
-        //listAccount = [SELECT Id, Name FROM Account];
-        //System.Assert.areEqual(1, listAccount.size());
-
-
-
-         // Query the CONTACT, not the Lead, after conversion
-        //  Contact convertedContact = [SELECT Id, Email, LastName FROM Contact WHERE Email = :lead.Email LIMIT 1];
-
-        //  System.assertNotEquals(null, convertedContact.Id, 'Contact ID should not be null');
-        //  System.assertEquals(lead.Email, convertedContact.Email, 'Email should match');
-        //  System.assertEquals(lead.LastName, convertedContact.LastName, 'Last Name should match'); // Or whatever fields you're merging
- 
-         // Assertions for the Lead that should *not* be converted:
-        //  List<Lead> notConvertedLeads = [SELECT Id, Status, IsConverted FROM Lead WHERE Email = :lead1.Email];
-        //  System.assertEquals(1, notConvertedLeads.size(), 'Should be one unconverted lead');
-        //  Lead notConvertedLead = notConvertedLeads[0]; // Get the Lead from the list
-        //  System.assertEquals(false, notConvertedLead.IsConverted, 'Lead should not be converted');
-        //  System.assertEquals('Open - Not Contacted', notConvertedLead.Status, 'Status should remain unchanged');
-
-        //Lead convertedLead = [SELECT Id, Status, IsConverted, Lead_Score__c FROM Lead WHERE Id =: lead.Id LIMIT 1];
-        //System.assertEquals(true, convertedLead.IsConverted);
-        //System.Assert.areEqual('Converted', convertedLead.Status);
     }
 }
